@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Topshelf;
+using Topshelf.Logging;
 using System.Timers;
 using Microsoft.Win32;
 using FirebirdSql.Data.FirebirdClient;
@@ -15,20 +16,22 @@ namespace RaksForPoverbike
     {
         static void Main(string[] args)
         {
-            HostFactory.Run(x =>                                 //1
+            HostFactory.Run(x =>                                
             {
-                x.Service<Wysylacz>(s =>                        //2
+                x.Service<Wysylacz>(s =>                        
                 {
-                    s.ConstructUsing(name => new Wysylacz());     //3
-                    s.WhenStarted(tc => tc.Start());              //4
-                    s.WhenStopped(tc => tc.Stop());               //5
+                    s.ConstructUsing(name => new Wysylacz());     
+                    s.WhenStarted(tc => tc.Start());             
+                    s.WhenStopped(tc => tc.Stop());               
                 });
-                x.RunAsLocalSystem();                            //6
+                x.RunAsLocalSystem();                           
 
-                x.SetDescription("Usluga wysylania raportow do Poverbike");        //7
-                x.SetDisplayName("Wysylacz do PB");                       //8
-                x.SetServiceName("Wysylacz_ftp_PB");                       //9
-            });    
+                x.SetDescription("Usługa atumatycznego wysyłania raportów do Powerbike");        
+                x.SetDisplayName("Wysyłacz na FTP do PB");                       
+                x.SetServiceName("Wysylacz_ftp_PB");
+            });
+  
+            
         }
     }
 
@@ -41,26 +44,34 @@ namespace RaksForPoverbike
         readonly Timer _timer;
         public Wysylacz()
         {
-            //10 sekund Timer(10000) >> jak ustawic raz na dobę o konkretnej godzinie???
-            _timer = new Timer(10000) { AutoReset = true }; 
+            //1 sekunda Timer(1000) 
+            _timer = new Timer(1000 * 60 * 60) { AutoReset = true };
             _timer.Elapsed += (sender, eventArgs) => Console.WriteLine("Wysylacz is {0} and all is well", DateTime.Now);
             _timer.Elapsed += new ElapsedEventHandler(this.wyslanie_do_ftp);
+
         }
         public void Start() { _timer.Start(); }
         public void Stop() { _timer.Stop(); }
 
         public void wyslanie_do_ftp(object sender, EventArgs e)
         {
-            Console.WriteLine("Łaczymy się z FB");
-            setConnectionON(true);
+            if (DateTime.Now.Hour >= 23 && DateTime.Now.Hour < 24)
+            {
+                logowanieDoPliku("Łaczymy się z FB", "INFO");
+                setConnectionON(true);
 
-            //wykonanie zapytań 
-            przygotowanieRaportu("'KR'","","","'POWERBIKE'","",true,true);
-            przygotowanieRaportu("'WA'", "", "", "'POWERBIKE'", "", true, true);
-            //przygotowanieRaportu("'M7'", "", "", "'POWERBIKE'", "", true, true);
-            przygotowanieRaportu("'NS'", "", "", "'POWERBIKE'", "", true, true);
+                //wykonanie zapytań 
+                przygotowanieRaportu("'KR'", "", "", "'POWERBIKE'", "", true, true);
+                przygotowanieRaportu("'WA'", "", "", "'POWERBIKE'", "", true, true);
+                ////przygotowanieRaportu("'M7'", "", "", "'POWERBIKE'", "", true, true);
+                przygotowanieRaportu("'NS'", "", "", "'POWERBIKE'", "", true, true);
 
-            setConnectionOFF();
+                setConnectionOFF();
+            }
+            else
+            {
+                logowanieDoPliku("Negatywna kontrola czasu, nie wykonanie operacji", "CHECK");
+            }
         }
 
         public string getConnectionString()
@@ -72,6 +83,7 @@ namespace RaksForPoverbike
                 rejestr = Registry.CurrentUser.OpenSubKey(RegistryKey);
                 if (rejestr == null)
                 {
+                    logowanieDoPliku("Brak ustawień połaczenia z FB w rejestrze Windows","WARNING");
                     throw new System.ArgumentException("Brak ustawień połaczenia w rejestrze Windows", "original");
                 }
 
@@ -96,7 +108,8 @@ namespace RaksForPoverbike
             }
             catch (Exception ex)
             {
-                throw new System.ArgumentException("Brak tworzenia połączenia do FB: " + ex.Message, "original");
+                logowanieDoPliku("Bład tworzenia połączenia do FB: " + ex.Message, "ERROR");
+                throw new System.ArgumentException("Bład tworzenia połączenia do FB: " + ex.Message, "original");
                 //Logg logg = new Logg(Logg.RodzajLogowania.ErrorMSG, Logg.MediumLoga.File, "1002: Błąd odczytu constr z rejestrze Windows: " + ex.Message);
                 //System.Windows.Forms.MessageBox.Show("1002: Błąd odczytu constr z rejestrze Windows: " + ex.Message);
             }
@@ -108,7 +121,7 @@ namespace RaksForPoverbike
         {
 
             conn = new FbConnection(getConnectionString());
-            Console.WriteLine("9001: Ustawiono parametry połaczenia. ");
+            logowanieDoPliku("9001: Ustawiono parametry połaczenia. ","INFO");
 
             try
             {
@@ -117,22 +130,22 @@ namespace RaksForPoverbike
                 {
                     if (_trybTest)
                     {
-                        Console.WriteLine("9002: Nawiązano połaczenie. " + conn.Database + " Status=" + conn.State);
+                        logowanieDoPliku("9002: Nawiązano połaczenie. " + conn.Database + " Status=" + conn.State, "INFO");
                     }
                     else
                     {
-                        Console.WriteLine("9003: Nawiązano połaczenie! " + conn.Database + " Status=" + conn.State);
+                        logowanieDoPliku("9003: Nawiązano połaczenie! " + conn.Database + " Status=" + conn.State,"INFO");
                     }
                 }
                 else
                 {
                     if (_trybTest)
                     {
-                        Console.WriteLine("1003: Nie połączono! Status=" + conn.State);
+                        logowanieDoPliku("1003: Nie połączono! Status=" + conn.State,"ERROR");
                     }
                     else
                     {
-                        Console.WriteLine("1004: Błąd połączenia z bazą!");
+                        logowanieDoPliku("1004: Błąd połączenia z bazą!","ERROR");
                     }
                 }
             }
@@ -140,11 +153,11 @@ namespace RaksForPoverbike
             {
                 if (_trybTest)
                 {
-                    Console.WriteLine("1005: Błąd: " + ex.Message);
+                    logowanieDoPliku("1005: Błąd: " + ex.Message,"ERROR");
                 }
                 else
                 {
-                    Console.WriteLine("1006: Błąd: " + ex.Message);
+                    logowanieDoPliku("1006: Błąd: " + ex.Message, "ERROR");
                 }
             }
         }
@@ -152,7 +165,7 @@ namespace RaksForPoverbike
         public void setConnectionOFF()
         {
             conn.Close();
-            Console.WriteLine("9003: Rozłaczono! Status=" + conn.State);
+            logowanieDoPliku("9003: Rozłaczono! Status=" + conn.State, "INFO");
         }
 
         public void przygotowanieRaportu(string magSym, string grupyPodst,string grupyDowol, string dostaw, string produc, bool pominArch, bool tylkoTow)
@@ -167,6 +180,7 @@ namespace RaksForPoverbike
             string magazyny = magSym;
 
             DateTime dataOd = new DateTime();
+            dataOd = new DateTime(2016, 10, 1);
             DateTime dataDo = new DateTime();
             
             //przygotowanie zapytania
@@ -336,7 +350,7 @@ namespace RaksForPoverbike
             else
             {
                file = "N00000.csv";
-               Console.WriteLine("Brak nazwy pliku dla tego magazynu, na serwer ftp zostanie zapisany plik " + file);
+               logowanieDoPliku("Brak nazwy pliku dla tego magazynu, na serwer ftp zostanie zapisany plik " + file, "WARNING");
             }
             StringBuilder builder = new StringBuilder();
 
@@ -354,29 +368,29 @@ namespace RaksForPoverbike
                     licznik++;
                 }
                 fbDataReader.Close();
-                Console.WriteLine("Wygenerowano {0} lini", licznik);
+                logowanieDoPliku("Wygenerowano " + licznik + " lini", "INFO");
             }
             catch (FbException ex)
             {
-                Console.WriteLine("Błąd wykonywania zapytanie SQL dla PowerBike: " + ex.Message);
+                logowanieDoPliku("Błąd wykonywania zapytanie SQL dla PowerBike: " + ex.Message,"ERROR");
                 throw;
             }
 
             string mydocpath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + @"\" + file;
             File.WriteAllText(mydocpath, builder.ToString());
-            Console.WriteLine("Zapisano plik: "+ mydocpath);
+            logowanieDoPliku("Zapisano plik: " + mydocpath, "INFO");
 
-            //sendFileToFTP(mydocpath);
+            sendFileToFTP(mydocpath, file);
         }
 
-        public void sendFileToFTP(string filePath)
+        public void sendFileToFTP(string filePath, string fileName)
         {
             //wysłanie na ftp
                 try
                 {
 
 
-                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://ftp.powerbikeb.ogicom.pl/" + filePath);
+                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://ftp.powerbikeb.ogicom.pl/" + fileName);
                     request.Method = WebRequestMethods.Ftp.UploadFile;
 
                     request.Credentials = new NetworkCredential("synchro.powerbikeb", "pqUUFQK6q4");
@@ -392,16 +406,55 @@ namespace RaksForPoverbike
 
                     FtpWebResponse response = (FtpWebResponse)request.GetResponse();
 
-                    Console.WriteLine("Zapisano plik z raportem: " + filePath + " Status odpowiedzi serwera:" + response.StatusDescription);
+                    logowanieDoPliku("Zapisano plik na FTP z raportem: " + filePath + " Status odpowiedzi serwera:" + response.StatusDescription,"INFO");
 
                     response.Close();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Bład zapisu pliku:" + filePath + " z raportem:" + ex.Message);
+                    logowanieDoPliku("Bład zapisu pliku na FTP: " + filePath + " z raportem:" + ex.Message, "ERROR");
                     throw;
                 }
 
         }
+
+        public void logowanieDoPliku(string komunikat, string typLoga)
+        {
+            logowanieDoPlikuLoc(komunikat, typLoga);
+            string logpath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + @"\logRaksExportToFTPPowerBike" + DateTime.Now.Year + DateTime.Now.Month + DateTime.Now.Day + ".log" ;
+            if (!File.Exists(logpath))
+            {
+                using (StreamWriter sw = File.CreateText(logpath))
+                {
+                    sw.WriteLine(typLoga + ";" + DateTime.Now.ToString() + ";" + komunikat);
+                }
+            }
+            else
+            {
+                using (StreamWriter sw = File.AppendText(logpath))
+                {
+                    sw.WriteLine(typLoga + ";" + DateTime.Now.ToString() + ";" + komunikat);
+                }	
+            }
+        }
+
+        public void logowanieDoPlikuLoc(string komunikat, string typLoga)
+        {
+            string logpath = @"C:\\imex\\logRaksExportToFTPPowerBike" + DateTime.Now.Year + DateTime.Now.Month + DateTime.Now.Day + ".log";
+            if (!File.Exists(logpath))
+            {
+                using (StreamWriter sw = File.CreateText(logpath))
+                {
+                    sw.WriteLine(typLoga + ";" + DateTime.Now.ToString() + ";" + komunikat);
+                }
+            }
+            else
+            {
+                using (StreamWriter sw = File.AppendText(logpath))
+                {
+                    sw.WriteLine(typLoga + ";" + DateTime.Now.ToString() + ";" + komunikat);
+                }
+            }
+        } 
     }
 }
