@@ -422,11 +422,35 @@ namespace RaksForPoverbike
         {
             logowanieDoPlikuLoc(komunikat, typLoga);
             string logpath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + @"\logRaksExportToFTPPowerBike" + DateTime.Now.Year + DateTime.Now.Month + DateTime.Now.Day + ".log" ;
+            string logpathImex = @"C:\\imex\\imexLogRaksExportToFTPPowerBike" + DateTime.Now.Year + DateTime.Now.Month + DateTime.Now.Day + ".log";
             if (!File.Exists(logpath))
             {
-                using (StreamWriter sw = File.CreateText(logpath))
+                try
                 {
-                    sw.WriteLine(typLoga + ";" + DateTime.Now.ToString() + ";" + komunikat);
+                    using (StreamWriter sw = File.CreateText(logpath))
+                    {
+                        sw.WriteLine(typLoga + ";" + DateTime.Now.ToString() + ";" + komunikat);
+                    }
+                }
+                catch (Exception fi)
+                {
+                    if (!File.Exists(logpathImex))
+                    {
+                        using (StreamWriter sw = File.CreateText(logpathImex))
+                        {
+                            sw.WriteLine(typLoga + ";" + DateTime.Now.ToString() + ";" + fi.Message);
+                            sw.WriteLine(typLoga + ";" + DateTime.Now.ToString() + ";" + komunikat);
+                        }
+                    }
+                    else
+                    {
+                        using (StreamWriter sw = File.AppendText(logpathImex))
+                        {
+                            sw.WriteLine(typLoga + ";" + DateTime.Now.ToString() + ";" + fi.Message);
+                            sw.WriteLine(typLoga + ";" + DateTime.Now.ToString() + ";" + komunikat);
+                        }
+
+                    }
                 }
             }
             else
