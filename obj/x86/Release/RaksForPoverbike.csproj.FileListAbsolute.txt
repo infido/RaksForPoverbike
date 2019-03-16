@@ -1,0 +1,9 @@
+C:\Documents and Settings\user\moje dokumenty\visual studio 2010\Projects\RaksForPoverbike\RaksForPoverbike\bin\Release\RaksForPoverbike.exe.config
+C:\Documents and Settings\user\moje dokumenty\visual studio 2010\Projects\RaksForPoverbike\RaksForPoverbike\bin\Release\RaksForPoverbike.exe
+C:\Documents and Settings\user\moje dokumenty\visual studio 2010\Projects\RaksForPoverbike\RaksForPoverbike\bin\Release\RaksForPoverbike.pdb
+C:\Documents and Settings\user\moje dokumenty\visual studio 2010\Projects\RaksForPoverbike\RaksForPoverbike\bin\Release\FirebirdSql.Data.FirebirdClient.dll
+C:\Documents and Settings\user\moje dokumenty\visual studio 2010\Projects\RaksForPoverbike\RaksForPoverbike\bin\Release\Topshelf.dll
+C:\Documents and Settings\user\moje dokumenty\visual studio 2010\Projects\RaksForPoverbike\RaksForPoverbike\bin\Release\FirebirdSql.Data.FirebirdClient.pdb
+C:\Documents and Settings\user\moje dokumenty\visual studio 2010\Projects\RaksForPoverbike\RaksForPoverbike\obj\x86\Release\ResolveAssemblyReference.cache
+C:\Documents and Settings\user\moje dokumenty\visual studio 2010\Projects\RaksForPoverbike\RaksForPoverbike\obj\x86\Release\RaksForPoverbike.exe
+C:\Documents and Settings\user\moje dokumenty\visual studio 2010\Projects\RaksForPoverbike\RaksForPoverbike\obj\x86\Release\RaksForPoverbike.pdb

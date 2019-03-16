@@ -16,18 +16,23 @@ namespace RaksForPoverbike
     {
         static void Main(string[] args)
         {
+            SettingFile st = new SettingFile(true);
             HostFactory.Run(x =>                                
             {
+
+                x.ApplyCommandLine();
+                
                 x.Service<Wysylacz>(s =>                        
                 {
                     s.ConstructUsing(name => new Wysylacz());     
                     s.WhenStarted(tc => tc.Start());             
                     s.WhenStopped(tc => tc.Stop());               
                 });
-                x.RunAsLocalSystem();                           
+                x.RunAsLocalSystem();
+                x.StartAutomatically();
 
                 x.SetDescription("Usługa atumatycznego wysyłania raportów do Powerbike");        
-                x.SetDisplayName("Wysyłacz na FTP do PB");                       
+                x.SetDisplayName("Wysyłacz na FTP do POWERBIKE");                       
                 x.SetServiceName("Wysylacz_ftp_PB");
             });
   
@@ -37,35 +42,55 @@ namespace RaksForPoverbike
 
     public class Wysylacz
     {
-        const string RegistryKey = "SOFTWARE\\Infido\\KonektorSQL";
         public static FbConnection conn;
         private string pathInfo;
 
         readonly Timer _timer;
         public Wysylacz()
         {
-            //1 sekunda Timer(1000) 
+            //1 sekunda 
+            //_timer = new Timer(1000) { AutoReset = true };
+
+            //5 minut
+            //_timer = new Timer(1000 * 60 * 5) { AutoReset = true };
+
+            //1 godzina
             _timer = new Timer(1000 * 60 * 60) { AutoReset = true };
-            _timer.Elapsed += (sender, eventArgs) => Console.WriteLine("Wysylacz is {0} and all is well", DateTime.Now);
+            
+            _timer.Elapsed += (sender, eventArgs) => logowanieDoPliku("Wysyłacz wykonuje się w pętli...", "INFO");
             _timer.Elapsed += new ElapsedEventHandler(this.wyslanie_do_ftp);
 
         }
-        public void Start() { _timer.Start(); }
+        public void Start() 
+        {
+            _timer.Start(); 
+        }
         public void Stop() { _timer.Stop(); }
 
         public void wyslanie_do_ftp(object sender, EventArgs e)
         {
             if (DateTime.Now.Hour >= 23 && DateTime.Now.Hour < 24)
             {
-                logowanieDoPliku("Łaczymy się z FB", "INFO");
+                logowanieDoPliku("Łaczymy się z FB (wyslanie_do_ftp)", "INFO");
                 setConnectionON(true);
+                logowanieDoPliku("Po połączeniu się z FB (wyslanie_do_ftp)", "INFO");
 
                 //wykonanie zapytań 
-                przygotowanieRaportu("'KR'", "", "", "'POWERBIKE'", "", true, true);
-                przygotowanieRaportu("'WA'", "", "", "'POWERBIKE'", "", true, true);
-                ////przygotowanieRaportu("'M7'", "", "", "'POWERBIKE'", "", true, true);
-                przygotowanieRaportu("'NS'", "", "", "'POWERBIKE'", "", true, true);
-
+                logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU KRAK", "INFO");
+                przygotowanieRaportu("'KRAK'", "", "", "'POWERBIKE'", "", true, true);
+                logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU WESO", "INFO");
+                przygotowanieRaportu("'WESO'", "", "", "'POWERBIKE'", "", true, true);
+                logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU PRZE", "INFO");
+                przygotowanieRaportu("'PRZE'", "", "", "'POWERBIKE'", "", true, true);
+                logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU CENTR", "INFO");
+                przygotowanieRaportu("'CENTR'", "", "", "'POWERBIKE'", "", true, true);
+                logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU WARS", "INFO");
+                przygotowanieRaportu("'WARS'", "", "", "'POWERBIKE'", "", true, true);
+                logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU NOWY", "INFO");
+                przygotowanieRaportu("'NOWY'", "", "", "'POWERBIKE'", "", true, true);
+                
+                logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++KONIEC RAPORTU", "INFO");
+                
                 setConnectionOFF();
             }
             else
@@ -76,22 +101,19 @@ namespace RaksForPoverbike
 
         public string getConnectionString()
         {
-            RegistryKey rejestr;
+            logowanieDoPliku("Definicja połączenia do FB START", "INFO");
+            SettingFile ustawieniaApp = new SettingFile();
+            logowanieDoPliku("Definicja połączenia do FB odczytano ustawienia z pliku", "INFO");
             string connectionString = "";
             try
             {
-                rejestr = Registry.CurrentUser.OpenSubKey(RegistryKey);
-                if (rejestr == null)
-                {
-                    logowanieDoPliku("Brak ustawień połaczenia z FB w rejestrze Windows","WARNING");
-                    throw new System.ArgumentException("Brak ustawień połaczenia w rejestrze Windows", "original");
-                }
-
                 connectionString =
-                    "User=" + (String)rejestr.GetValue("User") + ";" +
-                    "Password=" + (String)rejestr.GetValue("Pass") + ";" +
-                    "Database=" + (String)rejestr.GetValue("Path") + ";" +
-                    "Datasource=" + (String)rejestr.GetValue("IP") + ";" +
+                    "User=SYSDBA;" +
+                    "Password=masterkey;" +
+                    "Database=" + ustawieniaApp.Database + ";" +
+                    //"Database=" + "/usr/raks/Data/F00001.fdb;" +
+                    "Datasource="  + ustawieniaApp.DataSourcePath + ";" +
+                    //"Datasource=10.0.0.100;" +
                     "Port=3050;" +
                     "Dialect=3;" +
                     //"Charset=NONE;" +
@@ -104,7 +126,9 @@ namespace RaksForPoverbike
                     "Packet Size=8192;" +
                     "ServerType=0";
 
-                pathInfo = (String)rejestr.GetValue("IP") + ":" + (String)rejestr.GetValue("Path");
+                pathInfo = ustawieniaApp.DataSourcePath + ":" + ustawieniaApp.Database;
+                logowanieDoPliku("utworzono definicje połączenia do FB: " + pathInfo, "INFO");
+                //logowanieDoPliku("utworzono definicje połączenia do FB connection string: " + connectionString, "INFO");
             }
             catch (Exception ex)
             {
@@ -119,8 +143,15 @@ namespace RaksForPoverbike
 
         private void setConnectionON(Boolean _trybTest)
         {
-
-            conn = new FbConnection(getConnectionString());
+            logowanieDoPliku("setConnectionON (Program)", "INFO");
+            try
+            {
+                conn = new FbConnection(getConnectionString());
+            }
+            catch (FbException fb)
+            {
+                logowanieDoPliku("9000: Błąd tworzenia połaczenia do Firebird: " + fb.Message, "ERROR");
+            }
             logowanieDoPliku("9001: Ustawiono parametry połaczenia. ","INFO");
 
             try
@@ -339,14 +370,18 @@ namespace RaksForPoverbike
             sql += " group by SKROT ";
 
             string file = "";
-            if (magazyny == "'KR'")
+            if (magazyny == "'KRAK'")
                 file = "N00780.csv"; //Kraków
-            else if (magazyny == "'WA'")
-                file = "N04964.csv"; //Warszawa
-            else if (magazyny == "'M7'")
+            else if (magazyny == "'WARS'")
+                file = "N04964.csv"; //Warszawa (Puławska)
+            else if (magazyny == "'PRZE'")
                 file = "N03885.csv"; //Przemyśl
-            else if (magazyny == "'NS'")
+            else if (magazyny == "'NOWY'")
                 file = "N00779.csv"; //Nowy Sącz
+            else if (magazyny == "'WESO'")
+                file = "N05484.csv"; //N05484 Warszawa (Trakt Brzeski)
+            else if (magazyny == "'CENTR'")
+                file = "N05533.csv"; //N05533 Nowy Sącz (magazyn centrala)
             else
             {
                file = "N00000.csv";
@@ -385,15 +420,19 @@ namespace RaksForPoverbike
 
         public void sendFileToFTP(string filePath, string fileName)
         {
+            SettingFile setFF = new SettingFile();
+
             //wysłanie na ftp
+            logowanieDoPliku("Właściwe wysyłanie na FTP: " + filePath + "   " + fileName, "INFO");
                 try
                 {
 
 
-                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://ftp.powerbikeb.ogicom.pl/" + fileName);
+                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://" + setFF.AdresFTP +  "/" + fileName);
                     request.Method = WebRequestMethods.Ftp.UploadFile;
 
-                    request.Credentials = new NetworkCredential("synchro.powerbikeb", "pqUUFQK6q4");
+                    //request.Credentials = new NetworkCredential("synchro.powerbikeb", "pqUUFQK6q4");
+                    request.Credentials = new NetworkCredential(setFF.UserFTP, setFF.PassFTP);
 
                     StreamReader sourceStream = new StreamReader(filePath);
                     byte[] fileContents = Encoding.UTF8.GetBytes(sourceStream.ReadToEnd());
@@ -464,7 +503,7 @@ namespace RaksForPoverbike
 
         public void logowanieDoPlikuLoc(string komunikat, string typLoga)
         {
-            string logpath = @"C:\\imex\\logRaksExportToFTPPowerBike" + DateTime.Now.Year + DateTime.Now.Month + DateTime.Now.Day + ".log";
+            string logpath = @"C:\\imex\\allLogFTPPowerBike" + DateTime.Now.Year + DateTime.Now.Month + DateTime.Now.Day + ".log";
             if (!File.Exists(logpath))
             {
                 using (StreamWriter sw = File.CreateText(logpath))
