@@ -63,8 +63,8 @@ namespace RaksForPoverbike
                         plik = new FileStream(konfIniName, FileMode.CreateNew, FileAccess.Write);
                         zapisz = new StreamWriter(plik);
 
-                        zapisz.WriteLine("sciezka bazy e.g. /usr/raks/Data/F00001.fdb;");
-                        zapisz.WriteLine("nazwa bazy e.g. 10.0.0.100");
+                        zapisz.WriteLine("/usr/raks/Data/F00001.fdb;");
+                        zapisz.WriteLine("10.0.0.100");
                         zapisz.WriteLine("adresF");
                         zapisz.WriteLine("userF");
                         zapisz.WriteLine("haslF");
@@ -118,8 +118,8 @@ namespace RaksForPoverbike
                     plik = new FileStream(konfIniName, FileMode.CreateNew, FileAccess.Write);
                     zapisz = new StreamWriter(plik);
 
-                    zapisz.WriteLine("sciezka bazy e.g. /usr/raks/Data/F00001.fdb;");
-                    zapisz.WriteLine("nazwa bazy e.g. 10.0.0.100");
+                    zapisz.WriteLine("/usr/raks/Data/F00001.fdb;");
+                    zapisz.WriteLine("10.0.0.100");
                     zapisz.WriteLine("adresF");
                     zapisz.WriteLine("userF");
                     zapisz.WriteLine("haslF");

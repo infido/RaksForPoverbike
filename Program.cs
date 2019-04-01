@@ -69,7 +69,13 @@ namespace RaksForPoverbike
 
         public void wyslanie_do_ftp(object sender, EventArgs e)
         {
-            if (DateTime.Now.Hour >= 23 && DateTime.Now.Hour < 24)
+            //Uruchomienie stanu przejściowego od 2019-04-03 zmiana generowania godziny plików na po 12 w południe
+            DateTime dt = new DateTime(2019, 4, 3, 1, 0, 0);
+            if (
+                (DateTime.Now< dt && DateTime.Now.Hour >= 23 && DateTime.Now.Hour < 24)
+                ||
+                (DateTime.Now.Hour >= 12 && DateTime.Now.Hour < 13)
+                )
             {
                 logowanieDoPliku("Łaczymy się z FB (wyslanie_do_ftp)", "INFO");
                 setConnectionON(true);
