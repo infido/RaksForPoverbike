@@ -74,7 +74,9 @@ namespace RaksForPoverbike
             if (
                 (DateTime.Now< dt && DateTime.Now.Hour >= 23 && DateTime.Now.Hour < 24)
                 ||
-                (DateTime.Now.Hour >= 12 && DateTime.Now.Hour < 13)
+                (DateTime.Now.Hour >= 12 && DateTime.Now.Hour < 13 && DateTime.Now.DayOfWeek == DayOfWeek.Monday)
+                ||
+                (DateTime.Now.Hour >= 12 && DateTime.Now.Hour < 13 && DateTime.Now.DayOfWeek == DayOfWeek.Wednesday)
                 )
             {
                 logowanieDoPliku("Łaczymy się z FB (wyslanie_do_ftp)", "INFO");
