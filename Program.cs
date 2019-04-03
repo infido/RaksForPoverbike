@@ -90,12 +90,12 @@ namespace RaksForPoverbike
                 przygotowanieRaportu("'WESO'", "", "", "'POWERBIKE'", "", true, true);
                 logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU PRZE", "INFO");
                 przygotowanieRaportu("'PRZE'", "", "", "'POWERBIKE'", "", true, true);
-                logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU CENTR", "INFO");
-                przygotowanieRaportu("'CENTR'", "", "", "'POWERBIKE'", "", true, true);
+                logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU CENTR + NOWY do jednego pliku", "INFO");
+                przygotowanieRaportu("'CENTR','NOWY'", "", "", "'POWERBIKE'", "", true, true);
                 logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU WARS", "INFO");
                 przygotowanieRaportu("'WARS'", "", "", "'POWERBIKE'", "", true, true);
-                logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU NOWY", "INFO");
-                przygotowanieRaportu("'NOWY'", "", "", "'POWERBIKE'", "", true, true);
+                //logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++ Przygotowanie RAPORTU NOWY", "INFO");
+                //przygotowanieRaportu("'NOWY'", "", "", "'POWERBIKE'", "", true, true);
                 
                 logowanieDoPliku("+++++++++++++++++++++++++++++++++++++++++++KONIEC RAPORTU", "INFO");
                 
@@ -384,6 +384,8 @@ namespace RaksForPoverbike
                 file = "N04964.csv"; //Warszawa (Puławska)
             else if (magazyny == "'PRZE'")
                 file = "N03885.csv"; //Przemyśl
+            else if (magazyny.Contains("'NOWY'") && magazyny.Contains("'CENTR'"))
+                file = "N00779.csv"; //Nowy Sącz magazyn główny i pomocniczy
             else if (magazyny == "'NOWY'")
                 file = "N00779.csv"; //Nowy Sącz
             else if (magazyny == "'WESO'")
